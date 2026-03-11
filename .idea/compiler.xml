@@ -2,6 +2,7 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
       <profile name="Maven default annotation processors profile" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
@@ -13,6 +14,7 @@
         <module name="api-gateway" />
         <module name="sensor-service" />
         <module name="zone-service" />
+        <module name="identity-service" />
       </profile>
     </annotationProcessing>
   </component>
@@ -23,6 +25,7 @@
       <module name="config-server" options="-parameters" />
       <module name="crop-service" options="-parameters" />
       <module name="discovery-server" options="-parameters" />
+      <module name="identity-service" options="-parameters" />
       <module name="sensor-service" options="-parameters" />
       <module name="zone-service" options="-parameters" />
     </option>

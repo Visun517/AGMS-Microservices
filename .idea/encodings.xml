@@ -8,5 +8,6 @@
     <file url="file://$PROJECT_DIR$/infrastructure-services/api-gateway/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/infrastructure-services/config-server/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/infrastructure-services/discovery-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/infrastructure-services/identity-service/src/main/java" charset="UTF-8" />
   </component>
 </project>
