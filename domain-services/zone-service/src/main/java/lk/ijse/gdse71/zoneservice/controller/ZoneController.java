@@ -21,7 +21,7 @@ public class ZoneController {
         return ResponseEntity.ok(
                 new ApiResponseDto(
                         201,
-                        "Zone registered successfully",
+                        "Zone create successfully",
                         zoneService.createZone(request)
                 ));
 
@@ -33,7 +33,7 @@ public class ZoneController {
         return ResponseEntity.ok(
                 new ApiResponseDto(
                         200,
-                        "User registered successfully",
+                        "Get all zones successfully",
                         zoneService.getAllZones()
                 )
         );
@@ -45,7 +45,7 @@ public class ZoneController {
         return ResponseEntity.ok(
                 new ApiResponseDto(
                         200,
-                        "User registered successfully",
+                        "Zone get successfully",
                         zoneService.getZoneById(id)
                 ));
     }
@@ -56,7 +56,7 @@ public class ZoneController {
         return ResponseEntity.ok(
                 new ApiResponseDto(
                         200,
-                        "User registered successfully",
+                        "Zone updated successfully",
                         zoneService.updateZone(id, request)
                 ));
     }
@@ -67,7 +67,7 @@ public class ZoneController {
         return ResponseEntity.ok(
                 new ApiResponseDto(
                         200,
-                        "User registered successfully",
+                        "Zone deleted successfully",
                         zoneService.deleteZone(id)
 
                 ));

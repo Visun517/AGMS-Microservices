@@ -3,6 +3,7 @@ package lk.ijse.gdse71.zoneservice.service.impl;
 import lk.ijse.gdse71.zoneservice.dto.*;
 import lk.ijse.gdse71.zoneservice.entity.Zone;
 import lk.ijse.gdse71.zoneservice.exception.ValidationMinAndManTime;
+import lk.ijse.gdse71.zoneservice.exception.ZoneNoteFound;
 import lk.ijse.gdse71.zoneservice.repository.ZoneRepository;
 import lk.ijse.gdse71.zoneservice.service.IotClient;
 import lk.ijse.gdse71.zoneservice.service.ZoneService;
@@ -58,21 +59,65 @@ public class ZoneServiceImpl implements ZoneService {
 
     @Override
     public ZoneResponseDTO getZoneById(Long id) {
-        return null;
+        Zone zone = repository.findById(id)
+                .orElseThrow(() -> new ZoneNoteFound("Zone not found with id: " + id));
+
+        return ZoneResponseDTO.builder()
+                .id(zone.getId())
+                .name(zone.getName())
+                .minTemp(zone.getMinTemp())
+                .maxTemp(zone.getMaxTemp())
+                .deviceId(zone.getDeviceId())
+                .build();
     }
 
     @Override
     public List<ZoneResponseDTO> getAllZones() {
-        return List.of();
+        List<Zone> zones = repository.findAll();
+
+        return zones.stream()
+                .map(zone -> ZoneResponseDTO.builder()
+                        .id(zone.getId())
+                        .name(zone.getName())
+                        .minTemp(zone.getMinTemp())
+                        .maxTemp(zone.getMaxTemp())
+                        .deviceId(zone.getDeviceId())
+                        .build())
+                .toList();
     }
 
     @Override
     public ZoneResponseDTO updateZone(Long id, ZoneRequestDTO request) {
-        return null;
+        Zone zone = repository.findById(id)
+                .orElseThrow(() -> new ZoneNoteFound("Zone not found with id: " + id));
+
+        if (request.getMinTemp() >= request.getMaxTemp()) {
+            throw new ValidationMinAndManTime("Minimum temperature must be less than maximum temperature");
+        }
+
+        zone.setName(request.getName());
+        zone.setMinTemp(request.getMinTemp());
+        zone.setMaxTemp(request.getMaxTemp());
+
+        Zone updatedZone = repository.save(zone);
+
+        return ZoneResponseDTO.builder()
+                .id(updatedZone.getId())
+                .name(updatedZone.getName())
+                .minTemp(updatedZone.getMinTemp())
+                .maxTemp(updatedZone.getMaxTemp())
+                .deviceId(updatedZone.getDeviceId())
+                .build();
     }
 
     @Override
+    @Transactional
     public String deleteZone(Long id) {
-        return "";
+        if (!repository.existsById(id)) {
+            throw new ZoneNoteFound("Zone not found with id: " + id);
+        }
+
+        repository.deleteById(id);
+        return "Zone with id " + id + " has been deleted successfully!";
     }
 }
