@@ -16,7 +16,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
 
@@ -33,50 +35,41 @@ public class SensorFetcherServiceImpl implements SensorFetcherService {
     @Value("${external.iot.endpoints.telemetry}")
     private String telemetryEndpoint;
 
-    @Scheduled(fixedRate = 10000) // 10 seconds
+    @Scheduled(fixedRate = 10000)
     public void fetchAndPushTelemetry() {
-        log.info("Starting scheduled telemetry fetch...");
+        log.info("Starting reactive telemetry fetch...");
 
         String token = authService.getAccessToken();
+        if (token == null) return;
 
-        if (token == null) {
-            log.error("Failed to retrieve access token. Aborting telemetry fetch.");
-            return;
-        }
         ApiResponseDto zonesResponse = zoneClient.getAllZones();
         ObjectMapper mapper = new ObjectMapper();
-
         List<ZoneResponseDTO> zones = mapper.convertValue(
                 zonesResponse.getData(),
                 new TypeReference<List<ZoneResponseDTO>>() {});
 
-        for (ZoneResponseDTO zone : zones) {
-            try {
-                ExternalTelemetryResponseDTO externalData = webClient.get()
-                        .uri(telemetryEndpoint, zone.getDeviceId())
-                        .header("Authorization", "Bearer " + token)
-                        .retrieve()
-                        .bodyToMono(ExternalTelemetryResponseDTO.class)
-                        .block();
+        Flux.fromIterable(zones)
+                .flatMap(zone ->
+                        webClient.get()
+                                .uri(telemetryEndpoint, zone.getDeviceId())
+                                .header("Authorization", "Bearer " + token)
+                                .retrieve()
+                                .bodyToMono(ExternalTelemetryResponseDTO.class)
+                                .onErrorResume(e -> Mono.empty())
 
-                if (externalData != null) {
-                    TelemetryRequestDTO internalRequest = TelemetryRequestDTO.builder()
-                            .zoneId(zone.getId().toString())
-                            .currentTemp(externalData.getValue().getTemperature())
-                            .currentHumidity(externalData.getValue().getHumidity())
-                            .build();
+                                .publishOn(Schedulers.boundedElastic())
 
-                    automationClient.sendTelemetry(internalRequest);
-                    log.info("Telemetry pushed for Zone: {}", zone.getName());
-                }
-            } catch (WebClientResponseException.Unauthorized e) {
-                log.warn("Token expired for device {}. Clearing token...", zone.getDeviceId());
-                authService.clearToken();
-                break;
-            } catch (Exception e) {
-                log.error("Error fetching data for zone {}: {}", zone.getName(), e.getMessage());
-            }
+                                .doOnNext(externalData -> {
+                                    TelemetryRequestDTO internalRequest = TelemetryRequestDTO.builder()
+                                            .zoneId(zone.getId().toString())
+                                            .currentTemp(externalData.getValue().getTemperature())
+                                            .currentHumidity(externalData.getValue().getHumidity())
+                                            .build();
 
-        }
+                                    automationClient.sendTelemetry(internalRequest);
+                                    log.info("Telemetry pushed for: {}", zone.getName());
+                                })
+                )
+                .subscribe();
     }
 }
